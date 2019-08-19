@@ -5,12 +5,16 @@ void setup() {
 }
 
 void loop() {
+  // Temperature
+  //int analog = analogRead(ADC_PIN);
+  //fTemperature = toTemp(analog);
+
+  // Voltage
   int analog = analogRead(ADC_PIN);
-  //voltage = float(analog) / MAX_ADC;
-  fTemperature = toTemp(analog);
+  fVoltage = toVolt(analog);
 }
 
-// t o T e m p ( )
+// t o T e m p ( ) 
 // ============================
 // Conversion from ADC value to temperature (celcius)
 // Uses linear interpolation with a lookup table
@@ -35,4 +39,17 @@ float toTemp(int raw) {
   //Serial.printf("TEMP: %f, ADC: %i ---- FIRST: adc: %i, temp: %f ---- LAST: adc: %i, temp: %f\n", temp, raw_calibrate, first_adc, first_temp, last_adc, last_temp);
 
   return temp;
+}
+
+// t o V o l t ( ) 
+// ============================
+// Conversion from ADC value to input voltage (battery)
+//
+float toVolt(int raw) {
+  float out_voltage = (float(raw) * REF_VOLTAGE) / MAX_ADC; // convert ADC value to voltage (output voltage)
+  float in_voltage = ((BALANCE_RESISTOR_V1 + BALANCE_RESISTOR_V2) / BALANCE_RESISTOR_V2) * out_voltage; // calculate input voltage
+
+  //Serial.printf("RAW: %i, OUT: %f, IN: %f\n", raw, out_voltage, in_voltage);
+
+  return in_voltage;
 }
