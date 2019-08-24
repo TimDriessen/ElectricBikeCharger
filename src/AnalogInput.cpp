@@ -25,11 +25,16 @@ float CAnalogInput::measureTemp() {
   }
   float average_temp = total_temp / (float)TEMP_REPEAT;
 
-  //Serial.printf("Total: %f -- Average: %f\n", total_temp, average_temp);
+  Serial.printf("Total: %f -- Average: %f\n", total_temp, average_temp);
 
   return average_temp;
 }
 
+// m e a s u r e V o l t
+// ============================
+// Applies 'VOLT_REPEAT' amount of voltage measurements and
+// takes the averages from the result
+//
 float CAnalogInput::measureVolt() {
 
   digitalWrite(SELECT_A, LOW); 
@@ -40,7 +45,7 @@ float CAnalogInput::measureVolt() {
   }
   float average_volt = total_volt / (float)VOLT_REPEAT;
 
-  //Serial.printf("Total: %f -- Average: %f\n", total_volt, average_volt);
+  Serial.printf("Total: %f -- Average: %f\n", total_volt, average_volt);
 
   return average_volt;
 }

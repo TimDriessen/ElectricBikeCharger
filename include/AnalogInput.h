@@ -33,7 +33,6 @@ const float rgADCtoTemp[]={100.3, 75.1,
 class CAnalogInput
 {
   public:
-    int j = 4;
     CAnalogInput();
     float measureTemp();
     float measureVolt();
