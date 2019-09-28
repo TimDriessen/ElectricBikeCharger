@@ -5,16 +5,18 @@ void setup() {
 } 
 
 void loop() {
-
+  measureAnalog();
 }
 
 // m e a s u r e A n a l o g ()
 // ============================
-// Measure temperature and voltage
+// Measure temperatures and voltages
 //
 void measureAnalog() {
-  fTemperature = aiAnalog.measureTemp();
-  fVoltage = aiAnalog.measureVolt(); 
+  fTemperatureT1 = aiAnalog.measureTemp(true);
+  fTemperatureT2 = aiAnalog.measureTemp(false);
+  fVoltageV1 = aiAnalog.measureVolt(true); 
+  fVoltageV2 = aiAnalog.measureVolt(false); 
 }
 
 

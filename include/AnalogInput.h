@@ -4,27 +4,43 @@
 
 // ADC
 #define ADC_PIN A0
-#define SELECT_A 16                         // We only need SELECT_A since 2 analog inputs are used
+#define MUX_INPUT_LENGTH 3                      // Number of inputs of SN74HC4051      
+#define MUX_SWITCH_TIME 100                     // Time for multiplexer to switch channels (milliseconds)       
+#define SELECT_A 16                             
 #define SELECT_B 14
 #define SELECT_C 12
+                                                // Channel numbers of SN74HC4051 for analog inputs:
+#define CHANNEL_T1 0                            // Battery temperature
+#define CHANNEL_T2 3                            // Heatsink temperature
+#define CHANNEL_V1 2                            // Charger voltage 
+#define CHANNEL_V2 1                            // Battery voltage
 
 #define MAX_ADC 1023.0
-#define REF_VOLTAGE 1.0                     // Maximum voltage when you measure analog signal (can measure 0V ~ AREF voltage by using ADC port)
+#define REF_VOLTAGE 1.0                         // Maximum voltage when you measure analog signal (can measure 0V ~ AREF voltage by using ADC port)
 
-// -> Temperature
-#define TEMP_REPEAT 3                       // Amount of measurements to take average of
-#define ADC_CALIBRATE 30
-#define BETA 3660.38                        // K (Kelvin)
-#define RESIST_ROOM_TEMP 10000.0            // Ohms
-#define BALANCE_RESISTOR_T1 56000.0         // Ohms 
-const float rgADCtoTemp[]={100.3, 75.1, 
-52.7, 40.4, 32.1, 25.7, 20.4, 16.0, 12.1, 
-8.7, 5.5, 2.6};                             // lookup table for adc => temperature
+  // -> Temperature
+  #define TEMP_REPEAT 3                         // Amount of measurements to take average of
+  #define ADC_CALIBRATE 30
+  #define RESIST_ROOM_TEMP 10000.0              // 25 degrees Ohms
 
-// -> Voltage
-#define VOLT_REPEAT 2                       // Amount of measurements to take average of
-#define BALANCE_RESISTOR_V1 200000.0        // Ohms
-#define BALANCE_RESISTOR_V2 5100            // Ohms
+    // -----> T1 (BETA = 3660.38K)
+    #define BALANCE_RESISTOR_T1 56000.0         // Ohms 
+    #define ADC_CALIBRATE_T1 30
+    const float rgADCtoTemp_T1[]={100.3, 75.1, 
+    52.7, 40.4, 32.1, 25.7, 20.4, 16.0, 12.1, 
+    8.7, 5.5, 2.6};                             // lookup table for adc => temperature: ADC: 50, 100, 200,..., 1100
+
+    // -----> T2 (BETA = 3518.39K)
+    #define BALANCE_RESISTOR_T2 27500.0         // Ohms 
+    #define ADC_CALIBRATE_T2 -38
+    const float rgADCtoTemp_T2[]={129.3, 99.1,
+    72.6, 58.4, 48.6, 41.2, 35.2, 30.2, 25.7, 
+    21.8, 18.2, 14.9};                          // lookup table for adc => temperature: ADC: 50, 100, 200,..., 1100
+
+  // -> Voltage
+  #define VOLT_REPEAT 2                         // Amount of measurements to take average of
+  #define BALANCE_RESISTOR_A 200000.0           // Ohms
+  #define BALANCE_RESISTOR_B 5100               // Ohms
 
 // C A n a l o g I n p u t
 // =============
@@ -34,10 +50,15 @@ class CAnalogInput
 {
   public:
     CAnalogInput();
-    float measureTemp();
-    float measureVolt();
+    float measureTemp(bool isT1);
+    float measureVolt(bool isV1);
 
   private:
-    float toTemp(int raw);
+    int m_arriMuxInput[3];                      // Input of SN74HC4051: 011 => [2] = 0 ; [1] = 1; [0] = 1 
+    int m_iActiveChannel;
+
+    float toTemp(int raw, bool isT1);
     float toVolt(int raw);
+    void decToBin(int n, int (&bits)[3]);
+    void setMux(int (&bits)[3]);
 };

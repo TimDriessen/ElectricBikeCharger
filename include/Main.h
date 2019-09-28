@@ -13,8 +13,10 @@ int iStopCounter = CHARGER_STOP;            // We count every hour since Ticker 
 
 bool bChargerConnected = false;
 
-float fTemperature;                         // battery temperature
-float fVoltage;                             // battery voltage
+float fTemperatureT1;                       // Battery temperature
+float fTemperatureT2;                       // Heatsink temperature
+float fVoltageV1;                           // Charger voltage 
+float fVoltageV2;                           // Battery voltage
 
 Ticker tChargerStop;
 Ticker tMeasure;

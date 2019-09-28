@@ -14,64 +14,75 @@ CAnalogInput::CAnalogInput() {
 // ============================
 // Applies 'TEMP_REPEAT' amount of temperature measurements and
 // takes the averages from the result
+// isT1 selects which temperature is measured (Battery or Heatsink)
 //
-float CAnalogInput::measureTemp() {
+float CAnalogInput::measureTemp(bool isT1) {
+  int channel = (isT1 ? CHANNEL_T1 : CHANNEL_T2); // Channel for which we want to measure temperature
 
-  digitalWrite(SELECT_A, HIGH); 
+  if (m_iActiveChannel != channel) {
+    m_iActiveChannel = channel;
+    decToBin( (isT1 ? CHANNEL_T1 : CHANNEL_T2), m_arriMuxInput ); // modify array to contain correct bit-code
+    setMux(m_arriMuxInput); // set multiplexer with bit-code
+    delay(MUX_SWITCH_TIME); // give multiplexer time to switch
+  }
 
   float total_temp = 0;
-  for(int i = 0; i < TEMP_REPEAT ; i++) {
-    total_temp += toTemp(analogRead(ADC_PIN));
-  }
-  float average_temp = total_temp / (float)TEMP_REPEAT;
+  for(int i = 0; i < TEMP_REPEAT ; i++) { total_temp += toTemp(analogRead(ADC_PIN), isT1); }
 
-  Serial.printf("Total: %f -- Average: %f\n", total_temp, average_temp);
+  //Serial.printf("Total: %f -- Average: %f\n", total_temp, average_temp);
 
-  return average_temp;
+  return (total_temp / (float)TEMP_REPEAT);
 }
 
 // m e a s u r e V o l t
 // ============================
 // Applies 'VOLT_REPEAT' amount of voltage measurements and
 // takes the averages from the result
+// isV1 selects which voltage is measured (Charger or Battery)
 //
-float CAnalogInput::measureVolt() {
+float CAnalogInput::measureVolt(bool isV1) {
+  int channel = (isV1 ? CHANNEL_V1 : CHANNEL_V2); // Channel for which we want to measure voltage
 
-  digitalWrite(SELECT_A, LOW); 
+  if (m_iActiveChannel != channel) {
+    m_iActiveChannel = channel;
+    decToBin(channel, m_arriMuxInput); // modify array to contain correct bit-code
+    setMux(m_arriMuxInput); // set multiplexer with bit-code
+    delay(MUX_SWITCH_TIME); // give multiplexer time to switch
+  }
 
   float total_volt = 0;
-    for(int i = 0; i < VOLT_REPEAT ; i++) {
-    total_volt += toVolt(analogRead(ADC_PIN));
-  }
-  float average_volt = total_volt / (float)VOLT_REPEAT;
+  for(int i = 0; i < VOLT_REPEAT ; i++) { total_volt += toVolt(analogRead(ADC_PIN)); }
 
-  Serial.printf("Total: %f -- Average: %f\n", total_volt, average_volt);
-
-  return average_volt;
+  return (total_volt / (float)VOLT_REPEAT);
 }
-
 
 // t o T e m p ( ) 
 // ============================
 // Conversion from ADC value to temperature (celcius)
 // Uses linear interpolation with a lookup table
+// INPUT: ADC value - OUTPUT: Corresponding temperature
 //
-float CAnalogInput::toTemp(int raw) {
-  int raw_calibrate = raw + ADC_CALIBRATE; // Correct for formula / NTC-resistor mismatch
-  int first_index = raw_calibrate / 100; // index of first array element
+float CAnalogInput::toTemp(int raw, bool isT1) {
+
+  int raw_calibrate = raw + (isT1 ? ADC_CALIBRATE_T1 : ADC_CALIBRATE_T2); // Correct for formula / NTC-resistor mismatch
+  int indexA = raw_calibrate / 100; // index of first array element
+  int indexB = indexA + 1;
   
-  float first_temp = rgADCtoTemp[first_index];
-  float last_temp = rgADCtoTemp[first_index+1];
-
-  int first_adc;
-  if (first_index == 0) { // index == 0 is only index with adc value not being a multiple of 100
-    first_adc = 50; 
-  } else {
-    first_adc = first_index * 100;
+  float tempA = rgADCtoTemp_T2[indexA];
+  float tempB = rgADCtoTemp_T2[indexB];  
+  if (isT1) {
+    tempA = rgADCtoTemp_T1[indexA];
+    tempB = rgADCtoTemp_T1[indexB];
   }
-  int last_adc = (first_index + 1) *  100;
 
-  float temp = first_temp + (raw_calibrate - first_adc) * (last_temp - first_temp) / (last_adc - first_adc); // interpolate
+  int adc1 = indexA * 100;
+  if (indexA == 0) { // index == 0 is only index with adc value not being a multiple of 100
+    adc1 = 50; 
+  } 
+
+  int adc2 = indexB *  100;
+
+  float temp = tempA + (raw_calibrate - adc1) * (tempB - tempA) / (adc2 - adc1); // interpolate
   
   //Serial.printf("TEMP: %f, ADC: %i ---- FIRST: adc: %i, temp: %f ---- LAST: adc: %i, temp: %f\n", temp, raw_calibrate, first_adc, first_temp, last_adc, last_temp);
 
@@ -84,9 +95,31 @@ float CAnalogInput::toTemp(int raw) {
 //
 float CAnalogInput::toVolt(int raw) {
   float out_voltage = (float(raw) * REF_VOLTAGE) / MAX_ADC; // convert ADC value to voltage (output voltage)
-  float in_voltage = ((BALANCE_RESISTOR_V1 + BALANCE_RESISTOR_V2) / BALANCE_RESISTOR_V2) * out_voltage; // calculate input voltage
+  float in_voltage = ((BALANCE_RESISTOR_A + BALANCE_RESISTOR_B) / BALANCE_RESISTOR_B) * out_voltage; // calculate input voltage
 
   //Serial.printf("RAW: %i, OUT: %f, IN: %f\n", raw, out_voltage, in_voltage);
 
   return in_voltage;
+}
+
+// s e t M u x ( )
+// ============================
+// Switch multiplexer to 1 of the 8 option pins
+// (E.g. 010 connects to option pin 2)
+//
+void CAnalogInput::setMux(int (&bits)[3]) {
+  digitalWrite(SELECT_A, bits[0]); 
+  digitalWrite(SELECT_B, bits[1]); 
+  digitalWrite(SELECT_C, bits[2]); 
+}
+
+// d e c i m a l T o B i n a r y ( )
+// ============================
+// Conversion from decimal to binary
+// bits[] will contain conversion to binary from decimal 'n'
+//
+void CAnalogInput::decToBin(int n, int (&bits)[3]) {
+  for (int i = MUX_INPUT_LENGTH-1; i >= 0; i--) {
+    bits[i] = bitRead(n, i);
+  }
 }
