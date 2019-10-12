@@ -3,11 +3,9 @@
 CAnalogInput::CAnalogInput() {
   pinMode(SELECT_A, OUTPUT);
   pinMode(SELECT_B, OUTPUT);
-  pinMode(SELECT_C, OUTPUT);
 
   digitalWrite(SELECT_A, LOW); 
   digitalWrite(SELECT_B, LOW);
-  digitalWrite(SELECT_C, LOW);
 }
 
 // m e a s u r e T e m p ( ) 
@@ -21,7 +19,7 @@ float CAnalogInput::measureTemp(bool isT1) {
 
   if (m_iActiveChannel != channel) {
     m_iActiveChannel = channel;
-    decToBin( (isT1 ? CHANNEL_T1 : CHANNEL_T2), m_arriMuxInput ); // modify array to contain correct bit-code
+    decToBin( channel, m_arriMuxInput ); // modify array to contain correct bit-code
     setMux(m_arriMuxInput); // set multiplexer with bit-code
     delay(MUX_SWITCH_TIME); // give multiplexer time to switch
   }
@@ -104,13 +102,12 @@ float CAnalogInput::toVolt(int raw) {
 
 // s e t M u x ( )
 // ============================
-// Switch multiplexer to 1 of the 8 option pins
-// (E.g. 010 connects to option pin 2)
+// Switch multiplexer to 1 of the 4 option pins
+// (E.g. 10 connects to option pin 2)
 //
-void CAnalogInput::setMux(int (&bits)[3]) {
+void CAnalogInput::setMux(int (&bits)[MUX_INPUT_LENGTH]) {
   digitalWrite(SELECT_A, bits[0]); 
   digitalWrite(SELECT_B, bits[1]); 
-  digitalWrite(SELECT_C, bits[2]); 
 }
 
 // d e c i m a l T o B i n a r y ( )
@@ -118,8 +115,10 @@ void CAnalogInput::setMux(int (&bits)[3]) {
 // Conversion from decimal to binary
 // bits[] will contain conversion to binary from decimal 'n'
 //
-void CAnalogInput::decToBin(int n, int (&bits)[3]) {
+void CAnalogInput::decToBin(int n, int (&bits)[MUX_INPUT_LENGTH]) {
   for (int i = MUX_INPUT_LENGTH-1; i >= 0; i--) {
     bits[i] = bitRead(n, i);
   }
+  Serial.printf("dec: %i \n", n);
+  Serial.printf("bits[0]: %i, bits[1]: %i \n", bits[0], bits[1]);
 }

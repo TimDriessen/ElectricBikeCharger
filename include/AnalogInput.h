@@ -4,11 +4,10 @@
 
 // ADC
 #define ADC_PIN A0
-#define MUX_INPUT_LENGTH 3                      // Number of inputs of SN74HC4051      
+#define MUX_INPUT_LENGTH 2                      // Number of inputs of SN74HC4051      
 #define MUX_SWITCH_TIME 100                     // Time for multiplexer to switch channels (milliseconds)       
 #define SELECT_A 16                             
 #define SELECT_B 14
-#define SELECT_C 12
                                                 // Channel numbers of SN74HC4051 for analog inputs:
 #define CHANNEL_T1 0                            // Battery temperature
 #define CHANNEL_T2 3                            // Heatsink temperature
@@ -54,11 +53,12 @@ class CAnalogInput
     float measureVolt(bool isV1);
 
   private:
-    int m_arriMuxInput[3];                      // Input of SN74HC4051: 011 => [2] = 0 ; [1] = 1; [0] = 1 
+    int m_arriMuxInput[MUX_INPUT_LENGTH];       // Input of SN74HC4051: bin:10 = dec:2 => [1] = 1; [0] = 0 
     int m_iActiveChannel;
 
     float toTemp(int raw, bool isT1);
     float toVolt(int raw);
-    void decToBin(int n, int (&bits)[3]);
-    void setMux(int (&bits)[3]);
+
+    void decToBin(int n, int (&bits)[MUX_INPUT_LENGTH]);
+    void setMux(int (&bits)[MUX_INPUT_LENGTH]);
 };

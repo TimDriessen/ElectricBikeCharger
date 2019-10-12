@@ -3,8 +3,9 @@
 #include <Arduino.h> 
 #include <Ticker.h>
 #include "AnalogInput.h"
+#include "Switch.h"
 
-#define SWITCH_PIN //TODO: Choose pin       // Pin used for switch
+#define SWITCH_PIN 12                       // Pin used for switch
 #define LED_PIN 4                           // Pin used for state-indicating led
 
 #define NUM_CELLS 20                        // Number of cells inside battery pack
@@ -49,6 +50,7 @@ float fTimeState3 = 0;
 
 Ticker tStateMachine;                       // Ticker for State Machine
 CAnalogInput aiAnalog;                      // Calls default (empty) constructor
+CSwitch sSwitch(SWITCH_PIN);
 
 // ============================
 
