@@ -12,11 +12,11 @@
 
 #define STATE_TICK 0.1                      // Tick-time for state-machine (seconds)
 
-#define CHECK_START 3//0.5                  // Tick-time: Checking start (seconds)
-#define CHECK_END 3//2                      // Tick-time: Checking stop (seconds)
+#define CHECK_START 5//0.5                  // Tick-time: Checking start (seconds)
+#define CHECK_END 1//2                      // Tick-time: Checking stop (seconds)
 #define TIMEOUT 10                          // Tick-time: Timeout (hours)
-#define LED_SWITCH 0.2                      // Tick-time: Led switching (seconds)
-#define CHECK_RESET 3//0.5                  // Tick-time: Checking reset (seconds)
+#define LED_SWITCH 0.5//0.2                 // Tick-time: Led switching (seconds)
+#define CHECK_RESET 5//0.5                  // Tick-time: Checking reset (seconds)
 
 #define DT_T1_END 0.6                       // Max dT1/dt
 #define DT_V2_END -0.005*NUM_CELLS          // Min dV2
@@ -32,7 +32,7 @@
 
 // Variables ==================
 
-int iGlobalState = 0;                       // 0: Waiting (Led off) - 1: Charging (Led blinking) - 2: Charge stopped (Led on)
+int iGlobalState = 0;                       // 0: Waiting (Led off) - 1: Charging (Led on) - 2: Charging stopped (Led blinking)
 bool bLedState = false;             
 
 float fTemperatureT1;                       // Battery temperature
@@ -44,9 +44,10 @@ float fdT1dt, fdV2;                         // Deltas from temperature / voltage
 float fV2dur, fT1dur = 0;                   // Duration of meeting condition
 
 float fTimeState1 = 0;                      // Time-state variables
-float fTimeState2_end, 
-fTimeState2_timeout, fTimeState2_led = 0;
-float fTimeState3 = 0;
+float fTimeState2_end, fTimeState2_timeout = 0;
+float fTimeState3_end, fTimeState3_led = 0;
+
+unsigned long ulTimeoutPrev = 0;            // Previous time-update call, for state 2
 
 Ticker tStateMachine;                       // Ticker for State Machine
 CAnalogInput aiAnalog;                      // Calls default (empty) constructor
@@ -57,6 +58,7 @@ CSwitch sSwitch(SWITCH_PIN);
 // Functions ==================
 
 void timeUpdate(float &time_var, float limit, void (*call)());
+void timeUpdateReal(float &time_var, float limit, void (*call)(), unsigned long &prev_time);
 void resetTimers();
 void stateMachineRun();
 

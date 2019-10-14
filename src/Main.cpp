@@ -26,17 +26,31 @@ void timeUpdate(float &time_var, float limit, void (*call)()) {
   }
 }
 
+// t i m e U p d a t e R e a l ()
+// ============================
+// Same as timeUpdate() but updates timer-variable with real time difference instead of 'STATE_TICK' constant
+// Corrects for time-inconsistency due to miliDelay() calls
+//
+void timeUpdateReal(float &time_var, float limit, void (*call)(), unsigned long &prev_time) {
+  time_var += (float)(millis() - prev_time);
+  prev_time = millis();
+  if (time_var >= limit) {
+    time_var = 0;
+    (*call)();
+  }
+}
+
 // r e s e t T i m e r s ()
 // ============================
 // Reset all state-timers from the state-machine
 //
 void resetTimers() { 
-  fTimeState1 = fTimeState2_led = fTimeState2_end = fTimeState2_timeout = fTimeState3 = 0; 
+  fTimeState1 =  fTimeState2_end = fTimeState2_timeout = fTimeState3_led = fTimeState3_end = 0; 
 }
 
-// t i m e U p d a t e ()
+// s t a t e M a c h i n e R u n ()
 // ============================
-// Updates 'time_var' and if then 'limit' is exceed it calls the function 'call'
+// State Machine called by State-ticker 
 //
 void stateMachineRun() {
   switch(iGlobalState) {
@@ -44,12 +58,12 @@ void stateMachineRun() {
       timeUpdate(fTimeState1, CHECK_START, checkStart);
       break;
     case 1:
-      timeUpdate(fTimeState2_led, LED_SWITCH, ledSwap); // Note to myself: If you place this line below the CHECK_END line, led could fail => checkStop turns it on, but ledSwap can still turn it off
       timeUpdate(fTimeState2_end, CHECK_END, checkStop);
-      //timeUpdate(fTimeState2_timeout, (TIMEOUT * 3600), timeOut);
+      timeUpdateReal(fTimeState2_timeout, (TIMEOUT * 3600 * 1000), timeOut, ulTimeoutPrev); // We use timeUpdateReal(), since for timeOut() we can't tolerate time-inconsistencies
       break;
     case 2:
-      timeUpdate(fTimeState3, CHECK_RESET, checkReset);
+      timeUpdate(fTimeState3_led, LED_SWITCH, ledSwap); // Note to myself: If you place this line below the CHECK_RESET line, led could fail => checkReset turns it off, but ledSwap can still turn it on
+      timeUpdate(fTimeState3_end, CHECK_RESET, checkReset);
       break;
   }
 }
@@ -60,7 +74,7 @@ void stateMachineRun() {
 //
 void measureAnalog() {
   float t1 = aiAnalog.measureTemp(true);
-  fdT1dt = ((t1 - fTemperatureT1) / CHECK_END) * 60;
+  fdT1dt = ((t1 - fTemperatureT1) / (float)CHECK_END) * 60;
   fTemperatureT1 = t1;
 
   fTemperatureT2 = aiAnalog.measureTemp(false);
@@ -68,7 +82,7 @@ void measureAnalog() {
 
   float v2 = aiAnalog.measureVolt(false); 
   fdV2 = v2 - fVoltageV2;
-  fVoltageV2 = v2; // TODO: CHARGER SHOULD BE TURNED OFF TO BE ABLE TO MEASURE BATTERY VOLTAGE!!! (Or should it?)
+  fVoltageV2 = v2; // TODO: CHARGER SHOULD BE TURNED OFF TO BE ABLE TO MEASURE BATTERY VOLTAGE!!! (Or should it?)*/
 }
 
 // s t a r t C h a r g e r ()
@@ -78,6 +92,7 @@ void measureAnalog() {
 void startCharger() {
   iGlobalState = 1;
   resetTimers();
+  setLed(true); // Turn led on
   Serial.printf("state: %i \n", iGlobalState);
 
   // TODO: Start fan
@@ -90,7 +105,6 @@ void startCharger() {
 void stopCharger() {
   iGlobalState = 2;
   resetTimers();
-  setLed(true); // Turn led on
   Serial.printf("state: %i \n", iGlobalState);
 }
 

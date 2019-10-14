@@ -5,7 +5,8 @@
 // ADC
 #define ADC_PIN A0
 #define MUX_INPUT_LENGTH 2                      // Number of inputs of SN74HC4051      
-#define MUX_SWITCH_TIME 100                     // Time for multiplexer to switch channels (milliseconds)       
+#define MUX_SWITCH_TIME 100                     // Time for multiplexer to switch channels (milliseconds)    
+#define MEASURE_TIME 10                         // Time between consecutive measurements, from which average is taken (miliseconds)   
 #define SELECT_A 16                             
 #define SELECT_B 14
                                                 // Channel numbers of SN74HC4051 for analog inputs:
@@ -59,6 +60,8 @@ class CAnalogInput
     float toTemp(int raw, bool isT1);
     float toVolt(int raw);
 
+    void setChannel(int c);
     void decToBin(int n, int (&bits)[MUX_INPUT_LENGTH]);
     void setMux(int (&bits)[MUX_INPUT_LENGTH]);
+    void miliDelay(unsigned long t);
 };

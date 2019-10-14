@@ -8,6 +8,19 @@ CAnalogInput::CAnalogInput() {
   digitalWrite(SELECT_B, LOW);
 }
 
+// s e t C h a n n e l ()
+// ============================
+// Switches multiplexer to correct channel (if needed)
+//
+void CAnalogInput::setChannel(int c) {
+  if (m_iActiveChannel != c) {
+    m_iActiveChannel = c;
+    decToBin(c, m_arriMuxInput ); // modify array to contain correct bit-code
+    setMux(m_arriMuxInput); // set multiplexer with bit-code
+    miliDelay(MUX_SWITCH_TIME);
+  }
+}
+
 // m e a s u r e T e m p ( ) 
 // ============================
 // Applies 'TEMP_REPEAT' amount of temperature measurements and
@@ -15,19 +28,10 @@ CAnalogInput::CAnalogInput() {
 // isT1 selects which temperature is measured (Battery or Heatsink)
 //
 float CAnalogInput::measureTemp(bool isT1) {
-  int channel = (isT1 ? CHANNEL_T1 : CHANNEL_T2); // Channel for which we want to measure temperature
-
-  if (m_iActiveChannel != channel) {
-    m_iActiveChannel = channel;
-    decToBin( channel, m_arriMuxInput ); // modify array to contain correct bit-code
-    setMux(m_arriMuxInput); // set multiplexer with bit-code
-    delay(MUX_SWITCH_TIME); // give multiplexer time to switch
-  }
+  setChannel( (isT1 ? CHANNEL_T1 : CHANNEL_T2) ); // Channel for which we want to measure temperature
 
   float total_temp = 0;
-  for(int i = 0; i < TEMP_REPEAT ; i++) { total_temp += toTemp(analogRead(ADC_PIN), isT1); }
-
-  //Serial.printf("Total: %f -- Average: %f\n", total_temp, average_temp);
+  for(int i = 0; i < TEMP_REPEAT ; i++) { total_temp += toTemp(analogRead(ADC_PIN), isT1); miliDelay(MEASURE_TIME); }
 
   return (total_temp / (float)TEMP_REPEAT);
 }
@@ -39,17 +43,10 @@ float CAnalogInput::measureTemp(bool isT1) {
 // isV1 selects which voltage is measured (Charger or Battery)
 //
 float CAnalogInput::measureVolt(bool isV1) {
-  int channel = (isV1 ? CHANNEL_V1 : CHANNEL_V2); // Channel for which we want to measure voltage
-
-  if (m_iActiveChannel != channel) {
-    m_iActiveChannel = channel;
-    decToBin(channel, m_arriMuxInput); // modify array to contain correct bit-code
-    setMux(m_arriMuxInput); // set multiplexer with bit-code
-    delay(MUX_SWITCH_TIME); // give multiplexer time to switch
-  }
+  setChannel( (isV1 ? CHANNEL_V1 : CHANNEL_V2) ); // Channel for which we want to measure voltage
 
   float total_volt = 0;
-  for(int i = 0; i < VOLT_REPEAT ; i++) { total_volt += toVolt(analogRead(ADC_PIN)); }
+  for(int i = 0; i < VOLT_REPEAT ; i++) { total_volt += toVolt(analogRead(ADC_PIN)); miliDelay(MEASURE_TIME); }
 
   return (total_volt / (float)VOLT_REPEAT);
 }
@@ -58,7 +55,7 @@ float CAnalogInput::measureVolt(bool isV1) {
 // ============================
 // Conversion from ADC value to temperature (celcius)
 // Uses linear interpolation with a lookup table
-// INPUT: ADC value - OUTPUT: Corresponding temperature
+// INPUT: ADC value | OUTPUT: Corresponding temperature
 //
 float CAnalogInput::toTemp(int raw, bool isT1) {
 
@@ -119,6 +116,13 @@ void CAnalogInput::decToBin(int n, int (&bits)[MUX_INPUT_LENGTH]) {
   for (int i = MUX_INPUT_LENGTH-1; i >= 0; i--) {
     bits[i] = bitRead(n, i);
   }
-  Serial.printf("dec: %i \n", n);
-  Serial.printf("bits[0]: %i, bits[1]: %i \n", bits[0], bits[1]);
+}
+
+// m i l i D e l a y ()
+// ============================
+// Conversion from decimal to binary
+//
+void CAnalogInput::miliDelay(unsigned long t) {
+  unsigned long start = millis();
+  while((millis() - start) < t);
 }
