@@ -20,7 +20,6 @@
 
   // -> Temperature
   #define TEMP_REPEAT 3                         // Amount of measurements to take average of
-  #define ADC_CALIBRATE 30
   #define RESIST_ROOM_TEMP 10000.0              // 25 degrees Ohms
 
     // -----> T1 (BETA = 3660.38K)
@@ -31,11 +30,15 @@
     8.7, 5.5, 2.6};                             // lookup table for adc => temperature: ADC: 50, 100, 200,..., 1100
 
     // -----> T2 (BETA = 3518.39K)
-    #define BALANCE_RESISTOR_T2 27500.0         // Ohms 
+    //#define BALANCE_RESISTOR_T2 27500.0         // Ohms 
+    #define BALANCE_RESISTOR_T2 51000.0         // Ohms 
     #define ADC_CALIBRATE_T2 -38
-    const float rgADCtoTemp_T2[]={129.3, 99.1,
-    72.6, 58.4, 48.6, 41.2, 35.2, 30.2, 25.7, 
-    21.8, 18.2, 14.9};                          // lookup table for adc => temperature: ADC: 50, 100, 200,..., 1100
+    const float rgADCtoTemp_T2[]={107.9, 80.8,
+    56.8, 43.8, 34.9, 28.1, 22.6, 17.9, 13.8, 
+    10.2, 6.9, 3.8};      
+    //const float rgADCtoTemp_T2[]={129.3, 99.1,
+    //72.6, 58.4, 48.6, 41.2, 35.2, 30.2, 25.7, 
+    //21.8, 18.2, 14.9};                          // lookup table for adc => temperature: ADC: 50, 100, 200,..., 1100
 
   // -> Voltage
   #define VOLT_REPEAT 2                         // Amount of measurements to take average of
@@ -52,6 +55,7 @@ class CAnalogInput
     CAnalogInput();
     float measureTemp(bool isT1);
     float measureVolt(bool isV1);
+    void setChannel(int c);
 
   private:
     int m_arriMuxInput[MUX_INPUT_LENGTH];       // Input of SN74HC4051: bin:10 = dec:2 => [1] = 1; [0] = 0 
@@ -60,7 +64,6 @@ class CAnalogInput
     float toTemp(int raw, bool isT1);
     float toVolt(int raw);
 
-    void setChannel(int c);
     void decToBin(int n, int (&bits)[MUX_INPUT_LENGTH]);
     void setMux(int (&bits)[MUX_INPUT_LENGTH]);
     void miliDelay(unsigned long t);

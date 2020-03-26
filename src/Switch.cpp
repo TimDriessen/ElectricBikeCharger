@@ -21,6 +21,7 @@ CSwitch::CSwitch(int inputPin) {
 
   pinMode(m_iInputPin, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(m_iInputPin), ISRFunc, CHANGE); // Interrupt on state change
+  stateChange(); // Initilize state
 }
 
 
@@ -35,7 +36,7 @@ void CSwitch::stateChange() {
 
 // g e t S t a t e ()
 // ============================
-// Get current state of switch (Switch on = 1 | Switch off = 0)
+// Get current state of switch (Switch closed = 1 | Switch open = 0)
 //
 bool CSwitch::getState() {
   if (m_iUnstableState != m_iStableState) {

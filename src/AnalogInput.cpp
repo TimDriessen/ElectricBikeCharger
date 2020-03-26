@@ -60,39 +60,35 @@ float CAnalogInput::measureVolt(bool isV1) {
 float CAnalogInput::toTemp(int raw, bool isT1) {
 
   int raw_calibrate = raw + (isT1 ? ADC_CALIBRATE_T1 : ADC_CALIBRATE_T2); // Correct for formula / NTC-resistor mismatch
-  int indexA = raw_calibrate / 100; // index of first array element
-  int indexB = indexA + 1;
+  int indexA = raw_calibrate / 100; // index of array element in ADC-to-Temp-table closest to 'raw_calibrate' ADC value
+  int indexB = indexA + 1; // index above previous value (now 'raw_calibrate' is bounded between 2 adc values)
   
-  float tempA = rgADCtoTemp_T2[indexA];
-  float tempB = rgADCtoTemp_T2[indexB];  
+  float tempA = rgADCtoTemp_T2[indexA]; // First temp (T2)
+  float tempB = rgADCtoTemp_T2[indexB]; // Second temp (T2)
   if (isT1) {
-    tempA = rgADCtoTemp_T1[indexA];
-    tempB = rgADCtoTemp_T1[indexB];
+    tempA = rgADCtoTemp_T1[indexA]; // First temp (T1)
+    tempB = rgADCtoTemp_T1[indexB]; // Second temp (T1)
   }
 
-  int adc1 = indexA * 100;
+  int adc1 = indexA * 100; // ADC value corresponding to index
   if (indexA == 0) { // index == 0 is only index with adc value not being a multiple of 100
     adc1 = 50; 
   } 
 
-  int adc2 = indexB *  100;
+  int adc2 = indexB *  100; // ADC value corresponding to index
 
-  float temp = tempA + (raw_calibrate - adc1) * (tempB - tempA) / (adc2 - adc1); // interpolate
-  
-  //Serial.printf("TEMP: %f, ADC: %i ---- FIRST: adc: %i, temp: %f ---- LAST: adc: %i, temp: %f\n", temp, raw_calibrate, first_adc, first_temp, last_adc, last_temp);
+  float temp = tempA + (raw_calibrate - adc1) * (tempB - tempA) / (adc2 - adc1); // interpolate between TempA and tempB
 
   return temp;
 }
 
 // t o V o l t ( ) 
 // ============================
-// Conversion from ADC value to input voltage (battery)
+// Conversion from ADC value to input voltage
 //
 float CAnalogInput::toVolt(int raw) {
   float out_voltage = (float(raw) * REF_VOLTAGE) / MAX_ADC; // convert ADC value to voltage (output voltage)
   float in_voltage = ((BALANCE_RESISTOR_A + BALANCE_RESISTOR_B) / BALANCE_RESISTOR_B) * out_voltage; // calculate input voltage
-
-  //Serial.printf("RAW: %i, OUT: %f, IN: %f\n", raw, out_voltage, in_voltage);
 
   return in_voltage;
 }
@@ -100,7 +96,7 @@ float CAnalogInput::toVolt(int raw) {
 // s e t M u x ( )
 // ============================
 // Switch multiplexer to 1 of the 4 option pins
-// (E.g. 10 connects to option pin 2)
+// (E.g. 10 (binary) connects to option pin 2)
 //
 void CAnalogInput::setMux(int (&bits)[MUX_INPUT_LENGTH]) {
   digitalWrite(SELECT_A, bits[0]); 
