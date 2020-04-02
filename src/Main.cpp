@@ -15,10 +15,21 @@ void setup() {
 
   tStateMachine.attach(STATE_TICK, stateMachineRun); // Start state-machine ticker
   resetCharger(); // Setup initial state
+
+  if (ENABLE_DATA_WIFI) { wWifi.initWifi(); } // Initialise wifi connection
 }  
 
+/**
+ * Loop is only used for sending data: If sending data call is called somewhere in the state-tick-cyclcus it doesn't have enough time to send the data. 
+*/
 void loop() {
-
+  if (iSendState == 1) { // Send normal data
+    wWifi.sendNormal(fTemperatureT1, fTemperatureT2, fVoltageV1, fVoltageV2);
+    iSendState = 0;
+  } else if (iSendState == 2) { // Send final data (stopcode)
+    wWifi.sendFinal(iStopCode);
+    iSendState = 0;
+  }
 }
 
 // t i m e U p d a t e ()
@@ -68,6 +79,7 @@ void stateMachineRun() {
       break;
     case 1:
       timeUpdate(fTimeState2_end, CHECK_END, checkStop);
+      if (ENABLE_DATA_WIFI) {timeUpdate(fTimeState2_server, SEND_DATA_WIFI, sendNormal); } // Only send data if wifi is enabled
       checkPulsate(); // Pulsate charger if needed
       timeUpdateReal(fTimeState2_timeout, (TIMEOUT * 3600 * 1000), timeOut, ulTimeoutPrev); // We use timeUpdateReal(), since for timeOut() we can't tolerate time-inconsistencies
       break;
@@ -128,8 +140,11 @@ void startCharger() {
 // s t o p C h a r g e r ()
 // ============================
 // Stop charging process (State 1 -> 2)
+// Sends stop_code to Thingspeak-server
 //
-void stopCharger() {
+void stopCharger(int stop_code) {
+  if (ENABLE_DATA_WIFI) { iStopCode = stop_code; iSendState = 2; } // Send stop-code only if wifi is enabled
+
   iGlobalState = 2;
   resetTimers();
   aiAnalog.setChannel(CHANNEL_V2); // Put Multiplexer in battery-voltage-state (only measurement needed in State 0, 2)
@@ -175,7 +190,7 @@ int calculatePulsatePause() {
 // Called if charger-time is finished
 //
 void timeOut() {
-  stopCharger();
+  stopCharger(9);
 }
 
  
@@ -184,7 +199,6 @@ void timeOut() {
 // Check charger for starting conditions (switch on && battery connected)
 //
 void checkStart() {
-  Serial.println(aiAnalog.measureVolt(false)); // TODO: REMOVE this
   if (sSwitch.getState() && aiAnalog.measureVolt(false) >= VBATT_TRESHOLD) { // switch on && battery connected
     startCharger();
   }
@@ -199,30 +213,30 @@ void checkStop() {
   checkFan(); // Check if fan should be turned on/off
 
   if (!sSwitch.getState()) { // Switch open
-    stopCharger();
+    stopCharger(1);
   }
 
-  if (fVoltageV2 <= VZERO_TRESHOLD) { // Battery disconnect TODO REMOVE THIS ONE DOESN'T WORK
-    stopCharger();
+  if (fVoltageV2 <= VZERO_TRESHOLD) { // Battery disconnect TODO REMOVE THIS ONE DOESN'T WORK => To make it work charger must be turned off and then measure
+    stopCharger(2);
   }
 
   if (fVoltageV1 <= VZERO_TRESHOLD && fVoltageV2 >= VBATT_TRESHOLD) { // Charger-circuit not working
-    stopCharger();
+    stopCharger(3);
   }
 
   if (fTemperatureT1 > T1_END) { // Battery temperature exceeded max temperature
-    stopCharger();    
+    stopCharger(8);    
   }
 
   if (fTemperatureT2 >= T2_END) { // Heatsink overheat
-    stopCharger();
+    stopCharger(4);
   }
 
   if (fdT1dt >= DT_T1_END) {
     fT1dur += CHECK_END;
 
     if (fT1dur >= DELTA_T1_DUR) { // Battery temperature rising too fast
-      stopCharger();
+      stopCharger(5);
     }
   } else {
     fT1dur = 0;
@@ -232,17 +246,15 @@ void checkStop() {
     fV2dur += CHECK_END;
 
     if (fV2dur >= DELTA_V2_DUR) { // Negative battery voltage drop exceeded min value, indicating full charge
-      stopCharger();
+      stopCharger(6);
     }
   } else {
     fV2dur = 0;
   }
 
   if (fVoltageV2 >= V2_END) { // Battery voltage exceeded max voltage
-    stopCharger();  
+    stopCharger(7);  
   }
-
-
 }
 
 // c h e c k R e s e t ()
@@ -250,7 +262,6 @@ void checkStop() {
 // Check charger for reset conditions (switch off | battery disconnect)
 //
 void checkReset() {
-  Serial.println(aiAnalog.measureVolt(false)); // TODO: REMOVE this
   if (!sSwitch.getState() || aiAnalog.measureVolt(false) <= VZERO_TRESHOLD) {
     resetCharger();
   }
@@ -302,4 +313,12 @@ void checkFan() {
     digitalWrite(FAN_PIN, LOW); // Turn fan off
     bFanRunning = false;
   }
+}
+
+// s e n d N o r m a l ()
+// ============================
+// Enable loop() to send temperature/voltage data to Thingspeak-server
+//
+void sendNormal() {
+  iSendState = 1;
 }

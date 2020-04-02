@@ -36,7 +36,7 @@ float CAnalogInput::measureTemp(bool isT1) {
   return (total_temp / (float)TEMP_REPEAT);
 }
 
-// m e a s u r e V o l t
+// m e a s u r e V o l t ( )
 // ============================
 // Applies 'VOLT_REPEAT' amount of voltage measurements and
 // takes the averages from the result

@@ -30,15 +30,11 @@
     8.7, 5.5, 2.6};                             // lookup table for adc => temperature: ADC: 50, 100, 200,..., 1100
 
     // -----> T2 (BETA = 3518.39K)
-    //#define BALANCE_RESISTOR_T2 27500.0         // Ohms 
     #define BALANCE_RESISTOR_T2 51000.0         // Ohms 
     #define ADC_CALIBRATE_T2 -38
     const float rgADCtoTemp_T2[]={107.9, 80.8,
     56.8, 43.8, 34.9, 28.1, 22.6, 17.9, 13.8, 
-    10.2, 6.9, 3.8};      
-    //const float rgADCtoTemp_T2[]={129.3, 99.1,
-    //72.6, 58.4, 48.6, 41.2, 35.2, 30.2, 25.7, 
-    //21.8, 18.2, 14.9};                          // lookup table for adc => temperature: ADC: 50, 100, 200,..., 1100
+    10.2, 6.9, 3.8};                            // lookup table for adc => temperature: ADC: 50, 100, 200,..., 1100
 
   // -> Voltage
   #define VOLT_REPEAT 2                         // Amount of measurements to take average of

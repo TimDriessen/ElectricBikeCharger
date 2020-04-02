@@ -4,11 +4,13 @@
 #include <Ticker.h>
 #include "AnalogInput.h"
 #include "Switch.h"
+#include "Wifi.h"
 
 #define CHARGER_PIN 5                       // Pin used for turning on and off charger (HIGH = Charger off | LOW = Charger on)
 #define SWITCH_PIN 12                       // Pin used for switch
 #define FAN_PIN 13                          // Pin used for fan
 #define LED_PIN 4                           // Pin used for state-indicating led
+#define ENABLE_DATA_WIFI 1                  // 1 = Send data to Thingspeak | 0 = Don't send any data
 
 #define NUM_CELLS 20                        // Number of cells inside battery pack
 
@@ -19,7 +21,7 @@
 #define TIMEOUT 12                          // Tick-time: Timeout (hours)
 #define LED_SWITCH 0.5//0.2                 // Tick-time: Led switching (seconds)
 #define CHECK_RESET 0.3//0.5                // Tick-time: Checking reset (seconds)
-#define CHECK_PULSATE 0.5                   // Tick-time: Turning charger on/off because of pulsating mode
+#define SEND_DATA_WIFI 20                   // Tick-time: Sending data to Thingspeak-server (seconds)
 
 #define DT_T1_END 0.6                       // Max dT1/dt (Celcius / Minute)
 #define DV_V2_END -0.005*NUM_CELLS          // Min dV2 (Volt)
@@ -43,6 +45,8 @@ int iGlobalState = 0;                       // 0: Waiting (Led off) - 1: Chargin
 bool bLedState = false;   
 bool bFanRunning = false;    
 bool bPulsatingCharge = false; 
+int iSendState = 0;                         // 0: Not sending anything - 1: Sending normal data - 2: Sending final data
+int iStopCode = 0;                          // Reason the charger stopped (not stopped means iStopCode = 0)
 
 int iPulsateCounter = 100;                  // Counter for pulsating (0 - 100)
 int iPulsatePause = 0;                      // Percentage at which we stop charger (E.g. 'iPulsatePause = 20', means we charge for 20 counts and then wait for 80 counts (total of 100 counts))
@@ -57,7 +61,7 @@ float fV2dur, fT1dur = 0;                   // Duration for meeting stop-conditi
 
                                             // Time-state variables
 float fTimeState1 = 0;                      
-float fTimeState2_end, fTimeState2_timeout = 0;
+float fTimeState2_end, fTimeState2_timeout, fTimeState2_server = 0;
 float fTimeState3_end, fTimeState3_led = 0;
 
 unsigned long ulTimeoutPrev = 0;            // Previous time-update call, for timeUpdateReal() call
@@ -65,6 +69,7 @@ unsigned long ulTimeoutPrev = 0;            // Previous time-update call, for ti
 Ticker tStateMachine;                       // Ticker for State Machine
 CAnalogInput aiAnalog;                      // Calls default (empty) constructor
 CSwitch sSwitch(SWITCH_PIN);
+CWifi wWifi;
 
 // ============================
 
@@ -84,7 +89,7 @@ void checkReset();
 void checkPulsate();
 
 void startCharger();
-void stopCharger();
+void stopCharger(int stop_code);
 void resetCharger();
 
 int calculatePulsatePause();
@@ -96,4 +101,5 @@ void ledSwap();
 
 void checkFan();
 
+void sendNormal();
 // ============================
