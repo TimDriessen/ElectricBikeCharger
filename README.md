@@ -1,5 +1,7 @@
 # NiMH Electric Bike Charger
 
+![banner](https://user-images.githubusercontent.com/45215498/78689553-bf993c00-78f6-11ea-81bd-9e47edc682dd.jpg)
+
 Controller that overviews charging process of a Sparta ION electric bike and automatically switches off charger when certain conditions are met.
 
  In this project a charged is created for the Sparta ION electric bike. This bike contains a 24V 10000 mAh NiMH battery pack consisting of 20 cells. To make the charger as safe as possible, the battery is charged at a C rate of C/10 where C is the capacity of the battery. For a full charge, the charger should be connected for around 12 hours. This translates to essentially overnight charging. 
@@ -73,7 +75,7 @@ Some of these parts were chosen just by the convenience of having them laying ar
 
 ![Schematic of the charger](https://user-images.githubusercontent.com/45215498/78663929-4cca9980-78d3-11ea-8fae-b95fbf24dfcd.png)
 
-*Charger control*  
+***Charger control***  
 The circuit starts of by connecting the laptop chargers in series. Our input voltage then becomes 19*2 = 38V. Directly after this the two Step Down Voltage Regulators are placed (IC2 and IC3). The 3.3V Step Down powers the ESP and the 12V Step Down powers the fan. Since the regulators have a maximum input voltage of 36V the input voltage should be lowered. This was done by connecting six diodes directly after the laptop chargers.
 
 Controlling the LM317 to supply a constant 1A of current was done in the following way. In short, the LM317 adjusts it’s output voltage until the voltage difference between the adjustment terminal and the output terminal is exactly 1.25V. If we now put a resistor R in series between the output terminal and the adjustment terminal, then we have a potential difference of 1.25V over the resistor, which means that we have a current flow of 1.25/R amps (through resistor R1 in the drawing flows a negligible amount of current). By now taking R to be 1.2 Ohms, we have a current flow of 1.25/1.2 = 1.042 A ≈ 1A. The dissipated power for the resistor would be 1.25 * 1 = 1.25W, which is quite a lot. Therefore four resistors were used so that the power dissipation could be better divided.
@@ -84,7 +86,7 @@ When the charger is on, a voltage of around 30 volts can be measured at the outp
 
 Capacitors C1, C2, C3 and resistor R2 are placed there to reduce the noise on the wires.
 
-*Sensory inputs*  
+***Sensory inputs***  
 To know when exactly we want to turn on and off the charger, four sensors were incorporated into the design (two temperature and two voltage sensors). 
 To be able to measure the voltage before and after the diode, voltage dividers were used. The resistors were chosen in such a way that at 40V across the complete divider, ± 1V would be measured across the 5.1K resistor. If the charger is turned off, the voltage divider after the diode (R13, R14, R15) can be used to measure the voltage across the battery.
 
@@ -93,7 +95,7 @@ One NTC resistor is used to measure the temperature of the heatsink to which the
 
 The ESP has only one available input for analog signals, namely GPIO5. But we have four sensory inputs. To solve this problem, the SN74HC405 multiplexer was used. The digital input pins A, B and C are used to select to which of the eight option pins the COM_OUT/IN pin is connected. Since we only use four option pins, we only need A and B.
 
-*Other*  
+***Other***  
 A fan is used to cooldown the LM317. When the temperature is too high, the fan is turned on and remains on until the temperature reaches a certain threshold. This is implemented using a MOSFET. A flyback diode was also used to prevent a sudden voltage spike of breaking the fan when the fan is turned off.
 
 Other than that we have incorporated a reset and flash button to facilitate flashing the ESP (pull-up). Input switch (S3) is used to be able to turn off the charger and LED D3 is used to indicate the state of charging (waiting, charging or stopped). LED D2 emits light only when the charger is turned on. 
@@ -121,6 +123,11 @@ In special circumstances it might occur that the fan isn’t able to cooldown th
 
 Looking back at the software I see room for improvement. The project started of as a very simple charger but gradually more components were added to make it better. Because of this structure-wise improvements can definitely be made.
 
-[Foto buitenkant oplader]
-[Foto binnenkant van boven oplader]
-[Foto binnenkant van onder oplader]
+## Pictures of the charger
+On the first picture the main components of the charger are indicated.
+![layoutcharger](https://user-images.githubusercontent.com/45215498/78689577-c58f1d00-78f6-11ea-984b-e2da20e5bd73.jpg)
+
+The other pictures are here to give a better idea of the shape of the device.
+![20200407_161808](https://user-images.githubusercontent.com/45215498/78689527-b90ac480-78f6-11ea-8fdb-655c74a88f56.jpg)
+And the back:
+![backcharger](https://user-images.githubusercontent.com/45215498/78691123-937eba80-78f8-11ea-901c-377634548c46.jpg)
