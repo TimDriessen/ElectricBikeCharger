@@ -10,6 +10,8 @@ CWifi::CWifi() { }
 // Initialise wifi-connection. If after 'CONNECT_WAIT_TIME' seconds no connection was made, then it aborts trying to connect
 //
 void CWifi::initWifi() {
+  WiFi.mode(WIFI_STA); // Mode where the ESP joins an existing network
+
   WiFiClient client;
   m_bIsConnected = true; // Will be set to false if no connection has been made
   WiFi.begin(cSsid, cPassword);
@@ -34,6 +36,15 @@ void CWifi::initWifi() {
     Serial.println("WiFi Connection failed");
   }
 }
+
+// d i s a b l e W i f i ()
+// ============================
+// Disables wifi connection
+//
+void CWifi::disableWifi() {
+  WiFi.mode(WIFI_OFF); 
+}
+
 
 // s e n d D a t a ( )
 // ============================

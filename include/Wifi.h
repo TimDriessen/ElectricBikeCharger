@@ -19,6 +19,7 @@ class CWifi
   public:
     CWifi();
     void initWifi();
+    void disableWifi();
 
     void sendNormal(float field1, float field2, float field3, float field4);
     void sendFinal(int stop_code);

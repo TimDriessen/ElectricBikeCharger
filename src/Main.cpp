@@ -16,7 +16,11 @@ void setup() {
   tStateMachine.attach(STATE_TICK, stateMachineRun); // Start state-machine ticker
   resetCharger(); // Setup initial state
 
-  if (ENABLE_DATA_WIFI) { wWifi.initWifi(); } // Initialise wifi connection
+  if (ENABLE_DATA_WIFI) { 
+    wWifi.initWifi(); // Initialise wifi connection
+  } else {
+    wWifi.disableWifi(); // Disable wifi connection
+  }
 }  
 
 /**
