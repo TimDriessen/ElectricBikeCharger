@@ -69,7 +69,7 @@ void timeUpdateReal(float &time_var, float limit, void (*call)(), unsigned long 
 // Reset all state-timers from the state-machine
 //
 void resetTimers() { 
-  fTimeState1 =  fTimeState2_end = fTimeState2_timeout = fTimeState3_led = fTimeState3_end = 0; 
+  fTimeState1 =  fTimeState2_end = fTimeState2_timeout = fTimeState2_server = fTimeState2_boost = fTimeState3_led = fTimeState3_end = 0; 
 }
 
 // s t a t e M a c h i n e R u n ()
@@ -136,6 +136,11 @@ void startCharger() {
   iPulsateCounter = 100; // Trigger pulsate calculation
 
   setLed(true); // Turn led on
+
+  bFanBoost = true; // Turn fan boosting on
+  bFanRunning = true;
+  digitalWrite(FAN_PIN, HIGH); // Turn fan on
+
   digitalWrite(CHARGER_PIN, LOW); // Turn charger on
 
   Serial.printf("state: %i \n", iGlobalState);
@@ -157,6 +162,7 @@ void stopCharger(int stop_code) {
 
   digitalWrite(FAN_PIN, LOW); // Turn fan off
   bFanRunning = false;
+  bFanBoost = false;
   digitalWrite(CHARGER_PIN, HIGH); // Turn charger off
 
   Serial.printf("state: %i \n", iGlobalState);
@@ -309,13 +315,23 @@ void setLed(bool led_state) {
 // Checks if fan should be turned off or on based on current heatsink temperature (T2)
 //
 void checkFan() {
-  if (fTemperatureT2 >= FAN_START_T2 && !bFanRunning) {
-    digitalWrite(FAN_PIN, HIGH); // Turn fan on
-    bFanRunning = true;
-  }
-  if (fTemperatureT2 <= FAN_STOP_T2 && bFanRunning) {
-    digitalWrite(FAN_PIN, LOW); // Turn fan off
-    bFanRunning = false;
+  if (bFanBoost) {
+    fTimeState2_boost += CHECK_END;
+    if (fTimeState2_boost >= FAN_BOOST) { // Fan boost time has ran out
+      digitalWrite(FAN_PIN, LOW); // Turn fan off
+      bFanRunning = false;
+      bFanBoost = false;
+      
+    }
+  } else {
+    if (fTemperatureT2 >= FAN_START_T2 && !bFanRunning) {
+      digitalWrite(FAN_PIN, HIGH); // Turn fan on
+      bFanRunning = true;
+    }
+    if (fTemperatureT2 <= FAN_STOP_T2 && bFanRunning) {
+      digitalWrite(FAN_PIN, LOW); // Turn fan off
+      bFanRunning = false;
+    }
   }
 }
 

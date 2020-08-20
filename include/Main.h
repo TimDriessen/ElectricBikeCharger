@@ -38,12 +38,14 @@
 
 #define FAN_START_T2 48                     // Temperature of heatsink at which fan should start 
 #define FAN_STOP_T2 32                      // Temperature of heatsink at which fan should stop
+#define FAN_BOOST 600                       // Time to keep fan constantly on at the start of charging (seconds)
 
 // Variables ==================
 
 int iGlobalState = 0;                       // 0: Waiting (Led off) - 1: Charging (Led on) - 2: Charging stopped (Led blinking)
 bool bLedState = false;   
 bool bFanRunning = false;    
+bool bFanBoost = false;                     // True for first 5 minutes of charging to start to prevent any overheating
 bool bPulsatingCharge = false; 
 int iSendState = 0;                         // 0: Not sending anything - 1: Sending normal data - 2: Sending final data
 int iStopCode = 0;                          // Reason the charger stopped (not stopped means iStopCode = 0)
@@ -61,7 +63,7 @@ float fV2dur, fT1dur = 0;                   // Duration for meeting stop-conditi
 
                                             // Time-state variables
 float fTimeState1 = 0;                      
-float fTimeState2_end, fTimeState2_timeout, fTimeState2_server = 0;
+float fTimeState2_end, fTimeState2_timeout, fTimeState2_server, fTimeState2_boost = 0;
 float fTimeState3_end, fTimeState3_led = 0;
 
 unsigned long ulTimeoutPrev = 0;            // Previous time-update call, for timeUpdateReal() call
